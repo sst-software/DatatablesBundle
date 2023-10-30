@@ -23,6 +23,8 @@ class Column extends AbstractColumn
 
     use FilterableTrait;
 
+    use EscapingTrait;
+
     //-------------------------------------------------
     // ColumnInterface
     //-------------------------------------------------
@@ -38,6 +40,9 @@ class Column extends AbstractColumn
             if ($this->isEditableContentRequired($row)) {
                 $content = $this->renderTemplate($this->accessor->getValue($row, $path), $row[$this->editable->getPk()]);
                 $this->accessor->setValue($row, $path, $content);
+            } elseif ($this->isEscape()) {
+                $escapedContent = $this->escapeValue($this->accessor->getValue($row, $path));
+                $this->accessor->setValue($row, $path, $escapedContent);
             }
         }
 
@@ -75,6 +80,15 @@ class Column extends AbstractColumn
                     }
                 }
                 // no placeholder - leave this blank
+            } elseif ($this->isEscape()) {
+                $entries = $this->accessor->getValue($row, $path);
+                if (\count($entries) > 0) {
+                    foreach ($entries as $key => $entry) {
+                        $currentPath = $path.'['.$key.']'.$value;
+                        $escapedContent = $this->escapeValue($this->accessor->getValue($row, $currentPath));
+                        $this->accessor->setValue($row, $currentPath, $escapedContent);
+                    }
+                }
             }
         }
 
@@ -124,6 +138,7 @@ class Column extends AbstractColumn
         $resolver->setDefaults([
             'filter' => [TextFilter::class, []],
             'editable' => null,
+            'escape' => true,
         ]);
 
         $resolver->setAllowedTypes('filter', 'array');
