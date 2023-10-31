@@ -65,7 +65,8 @@ class Column extends AbstractColumn
 
                 $entries = $this->accessor->getValue($row, $path);
 
-                if (\count($entries) > 0) {
+                $isCountable = function_exists('is_countable') ? is_countable($entries) : \is_array($entries) || $entries instanceof \Countable;
+                if ($isCountable && \count($entries) > 0) {
                     foreach ($entries as $key => $entry) {
                         $currentPath = $path.'['.$key.']'.$value;
                         $currentObjectPath = Helper::getPropertyPathObjectNotation($path, $key, $value);
@@ -82,7 +83,8 @@ class Column extends AbstractColumn
                 // no placeholder - leave this blank
             } elseif ($this->isEscape()) {
                 $entries = $this->accessor->getValue($row, $path);
-                if (\count($entries) > 0) {
+                $isCountable = function_exists('is_countable') ? is_countable($entries) : \is_array($entries) || $entries instanceof \Countable;
+                if ($isCountable && \count($entries) > 0) {
                     foreach ($entries as $key => $entry) {
                         $currentPath = $path.'['.$key.']'.$value;
                         $escapedContent = $this->escapeValue($this->accessor->getValue($row, $currentPath));

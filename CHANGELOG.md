@@ -1,3 +1,7 @@
+# Version 1.4.1
+
+* Fix issue in different php versions; count(null) does not work anymore in higher versions, so adding an extra check to be able to deal with this
+
 # Version 1.4
 
 * Fix XSS issue for columns which are not editable
