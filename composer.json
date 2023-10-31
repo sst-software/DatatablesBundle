@@ -1,11 +1,15 @@
 {
-    "name": "sg/datatablesbundle",
+    "name": "sst/datatablesbundle",
     "type": "symfony-bundle",
     "description": "Symfony Datatable Bundle For Doctrine2 Entities",
     "keywords": ["symfony", "datatable", "datatables", "data-table", "grid", "table", "datagrid", "pagination"],
     "homepage": "https://github.com/stwe/DatatablesBundle",
     "license": "MIT",
     "authors": [
+        {
+            "name": "SST Software",
+            "homepage": "https://sst.nl"
+        },
         {
             "name": "stwe"
         },
