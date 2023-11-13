@@ -1,3 +1,7 @@
+# Version 1.4.2
+
+* Fix issue where sometimes other value-types (like DateTime objects) can be passed, which throw errors when casting to a string. in that case, the original value is used
+
 # Version 1.4.1
 
 * Fix issue in different php versions; count(null) does not work anymore in higher versions, so adding an extra check to be able to deal with this

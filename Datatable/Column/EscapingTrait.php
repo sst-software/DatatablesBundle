@@ -34,7 +34,12 @@ trait EscapingTrait
             return array_map('self::escapeValue', $value);
         }
         if ($value !== null) {
-            return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            try {
+                $convertedValue = (string)$value;
+                return htmlspecialchars($convertedValue, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            } catch (\Throwable $e) {
+                return $value;
+            }
         }
 
         return $value;
