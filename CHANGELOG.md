@@ -1,3 +1,7 @@
+# Version 1.5.0
+
+* Add support for Symfony 7
+
 # Version 1.4.2
 
 * Fix issue where sometimes other value-types (like DateTime objects) can be passed, which throw errors when casting to a string. in that case, the original value is used
