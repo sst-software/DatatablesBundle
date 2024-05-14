@@ -106,6 +106,13 @@ class DatatableQueryBuilder
     private $columns;
 
     /**
+     * All ColumnNames of the Datatable.
+     *
+     * @var array
+     */
+    private $columnNames;
+
+    /**
      * Contains all Columns to create a SELECT FROM statement.
      *
      * @var array

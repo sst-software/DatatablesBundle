@@ -12,7 +12,7 @@
 namespace Sg\DatatablesBundle\Tests\Response;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\MySqlPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\Mapping\ClassMetadata;
@@ -87,7 +87,6 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         $entityName = '\App\Entity\Order';
         $shortName = 'Order';
         $this->queryBuilder->from($entityName, '_order')->willReturn($this->queryBuilder)->shouldBeCalled();
-
         $this->getDataTableQueryBuilder($entityName, $shortName);
     }
 
@@ -106,11 +105,12 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         $this->classMetadata->getReflectionClass()->willReturn($this->reflectionClass->reveal());
         $this->classMetadata->getIdentifierFieldNames()->willReturn([]);
         $this->classMetadataFactory->getMetadataFor($entityName)->willReturn($this->classMetadata->reveal());
-        $this->connection->getDatabasePlatform()->willReturn(new MySqlPlatform());
+        $this->connection->getDatabasePlatform()->willReturn(new MySQLPlatform());
         $this->entityManager->getMetadataFactory()->willReturn($this->classMetadataFactory->reveal());
         $this->entityManager->createQueryBuilder()->willReturn($this->queryBuilder->reveal());
         $this->entityManager->getConnection()->willreturn($this->connection->reveal());
         $this->columnBuilder->getColumns()->willReturn([]);
+        $this->columnBuilder->getColumnNames()->willReturn([]);
         $this->dataTable->getEntity()->willReturn($entityName);
         $this->dataTable->getEntityManager()->willReturn($this->entityManager->reveal());
         $this->dataTable->getColumnBuilder()->willReturn($this->columnBuilder->reveal());
