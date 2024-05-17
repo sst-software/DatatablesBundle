@@ -22,7 +22,7 @@ class SgDatatablesExtension extends Extension implements PrependExtensionInterfa
     /**
      * {@inheritdoc}
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
@@ -36,7 +36,7 @@ class SgDatatablesExtension extends Extension implements PrependExtensionInterfa
     /**
      * {@inheritdoc}
      */
-    public function prepend(ContainerBuilder $container)
+    public function prepend(ContainerBuilder $container): void
     {
         $container->prependExtensionConfig(
             'framework',

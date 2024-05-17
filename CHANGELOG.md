@@ -1,3 +1,7 @@
+# Version 1.5.1
+
+* Add return types to reduce the number of deprecation warnings.
+
 # Version 1.5.0
 
 * Add support for Symfony 7

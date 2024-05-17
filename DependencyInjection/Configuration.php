@@ -38,7 +38,7 @@ class Configuration implements ConfigurationInterface
     /**
      * Add datatable section.
      */
-    private function addDatatableSection(ArrayNodeDefinition $rootNode)
+    private function addDatatableSection(ArrayNodeDefinition $rootNode): void
     {
         $rootNode
             ->children()

@@ -44,7 +44,7 @@ class DatatableTwigExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return 'sg_datatables_twig_extension';
     }
@@ -52,7 +52,7 @@ class DatatableTwigExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getFunctions()
+    public function getFunctions(): array
     {
         return [
             new TwigFunction(
@@ -86,7 +86,7 @@ class DatatableTwigExtension extends AbstractExtension
     /**
      * {@inheritdoc}
      */
-    public function getFilters()
+    public function getFilters(): array
     {
         return [
             new TwigFilter('sg_datatables_bool_var', [$this, 'boolVar']),
@@ -102,7 +102,7 @@ class DatatableTwigExtension extends AbstractExtension
      *
      * @return string
      */
-    public function datatablesRender(Environment $twig, DatatableInterface $datatable)
+    public function datatablesRender(Environment $twig, DatatableInterface $datatable): string
     {
         return $twig->render(
             '@SgDatatables/datatable/datatable.html.twig',
@@ -117,7 +117,7 @@ class DatatableTwigExtension extends AbstractExtension
      *
      * @return string
      */
-    public function datatablesRenderHtml(Environment $twig, DatatableInterface $datatable)
+    public function datatablesRenderHtml(Environment $twig, DatatableInterface $datatable): string
     {
         return $twig->render(
             '@SgDatatables/datatable/datatable_html.html.twig',
@@ -132,7 +132,7 @@ class DatatableTwigExtension extends AbstractExtension
      *
      * @return string
      */
-    public function datatablesRenderJs(Environment $twig, DatatableInterface $datatable)
+    public function datatablesRenderJs(Environment $twig, DatatableInterface $datatable): string
     {
         return $twig->render(
             '@SgDatatables/datatable/datatable_js.html.twig',
@@ -149,7 +149,7 @@ class DatatableTwigExtension extends AbstractExtension
      *
      * @return string
      */
-    public function datatablesRenderFilter(Environment $twig, DatatableInterface $datatable, ColumnInterface $column, $position)
+    public function datatablesRenderFilter(Environment $twig, DatatableInterface $datatable, ColumnInterface $column, $position): string
     {
         /** @var FilterInterface $filter */
         $filter = $this->accessor->getValue($column, 'filter');
@@ -181,7 +181,7 @@ class DatatableTwigExtension extends AbstractExtension
      *
      * @return string
      */
-    public function datatablesRenderMultiselectActions(Environment $twig, ColumnInterface $multiselectColumn, $pipeline)
+    public function datatablesRenderMultiselectActions(Environment $twig, ColumnInterface $multiselectColumn, $pipeline): string
     {
         $parameters = [];
         $values = [];
@@ -241,7 +241,7 @@ class DatatableTwigExtension extends AbstractExtension
      *
      * @return string
      */
-    public function boolVar($value)
+    public function boolVar($value): string
     {
         if ($value) {
             return 'true';
