@@ -197,7 +197,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getLineFormatter(): ?callable
+    public function getLineFormatter()
     {
         return null;
     }
@@ -205,7 +205,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getColumnBuilder(): ColumnBuilder
+    public function getColumnBuilder()
     {
         return $this->columnBuilder;
     }
@@ -213,7 +213,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getAjax(): Ajax
+    public function getAjax()
     {
         return $this->ajax;
     }
@@ -221,7 +221,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getOptions(): Options
+    public function getOptions()
     {
         return $this->options;
     }
@@ -229,7 +229,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getFeatures(): Features
+    public function getFeatures()
     {
         return $this->features;
     }
@@ -237,7 +237,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getCallbacks(): Callbacks
+    public function getCallbacks()
     {
         return $this->callbacks;
     }
@@ -245,7 +245,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getEvents(): Events
+    public function getEvents()
     {
         return $this->events;
     }
@@ -253,7 +253,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getExtensions(): Extensions
+    public function getExtensions()
     {
         return $this->extensions;
     }
@@ -261,7 +261,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getLanguage(): Language
+    public function getLanguage()
     {
         return $this->language;
     }
@@ -269,7 +269,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getEntityManager(): EntityManagerInterface
+    public function getEntityManager()
     {
         return $this->em;
     }
@@ -277,7 +277,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getOptionsArrayFromEntities($entities, $keyFrom = 'id', $valueFrom = 'name'): array
+    public function getOptionsArrayFromEntities($entities, $keyFrom = 'id', $valueFrom = 'name')
     {
         $options = [];
 
@@ -301,7 +301,7 @@ abstract class AbstractDatatable implements DatatableInterface
     /**
      * {@inheritdoc}
      */
-    public function getUniqueName(): string
+    public function getUniqueName()
     {
         return $this->getName().($this->getUniqueId() > 1 ? '-'.$this->getUniqueId() : '');
     }
@@ -315,7 +315,7 @@ abstract class AbstractDatatable implements DatatableInterface
      *
      * @throws LogicException
      */
-    private function validateName(): void
+    private function validateName()
     {
         $name = $this->getName();
         if (1 !== preg_match(self::NAME_REGEX, $name)) {
