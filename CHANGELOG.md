@@ -1,3 +1,7 @@
+# Version 1.5.2
+
+* Fix correct parameterName for LinkColumn empty_value; changed to emptyValue to be consistent with other columns and to let the name be aligned with its getter and setter
+
 # Version 1.5.1
 
 * Add return types to reduce the number of deprecation warnings.

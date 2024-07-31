@@ -40,7 +40,7 @@ class LinkColumn extends AbstractColumn
      *
      * @var string
      */
-    protected $empty_value;
+    protected $emptyValue;
 
     /**
      * The text displayed for each item in the link.
