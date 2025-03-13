@@ -15,6 +15,7 @@ use Exception;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 trait OptionsTrait
 {
@@ -32,6 +33,8 @@ trait OptionsTrait
      */
     protected $accessor;
 
+    protected static PropertyAccessorInterface $sharedAccessor;
+
     //-------------------------------------------------
     // Public
     //-------------------------------------------------
@@ -46,13 +49,16 @@ trait OptionsTrait
     public function initOptions($resolve = false)
     {
         $this->options = [];
-
-        // @noinspection PhpUndefinedMethodInspection
-        $this->accessor = PropertyAccess::createPropertyAccessorBuilder()
+        // Share the PropertyAccessor instance among all uses of this trait,
+        // for improved performance for datatables with many columns (by utilyzing $readPropertyCache/$writePropertyCache),
+        // while keeping the original $accessor property, so no further changes are needed.
+        static::$sharedAccessor ??= PropertyAccess::createPropertyAccessorBuilder()
             ->enableMagicCall()
             ->getPropertyAccessor()
         ;
 
+        // @noinspection PhpUndefinedMethodInspection
+        $this->accessor ??= static::$sharedAccessor;
         if (true === $resolve) {
             $this->set($this->options);
         }
