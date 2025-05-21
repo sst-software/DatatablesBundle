@@ -1,3 +1,11 @@
+# Version 1.6.1
+
+* Fix deprecation warning for using strstr with `null` as haystack; refactor function while we're at it
+
+# Version 1.6.0
+
+* Keep a shared PropertyAccessor to improve performance of datatables with many columns
+
 # Version 1.5.2
 
 * Fix correct parameterName for LinkColumn empty_value; changed to emptyValue to be consistent with other columns and to let the name be aligned with its getter and setter
