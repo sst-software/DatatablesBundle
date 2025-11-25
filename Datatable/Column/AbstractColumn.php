@@ -151,6 +151,14 @@ abstract class AbstractColumn implements ColumnInterface
     protected $searchable;
 
     /**
+     * Set to true if a column should not be considered for global searching.
+     * If null, searchable option is used.
+     * DataTables default: null
+     * Default: null.
+     */
+    protected $excludeFromGlobalSearch;
+
+    /**
      * Set the column title.
      * DataTables default: Value read from the column's header cell.
      * Default: null.
@@ -318,6 +326,7 @@ abstract class AbstractColumn implements ColumnInterface
             'order_data' => null,
             'order_sequence' => null,
             'searchable' => true,
+            'exclude_from_global_search' => null,
             'title' => null,
             'visible' => true,
             'width' => null,
@@ -339,6 +348,7 @@ abstract class AbstractColumn implements ColumnInterface
         $resolver->setAllowedTypes('order_data', ['null', 'array', 'int']);
         $resolver->setAllowedTypes('order_sequence', ['null', 'array']);
         $resolver->setAllowedTypes('searchable', 'bool');
+        $resolver->setAllowedTypes('exclude_from_global_search', ['bool', 'null']);
         $resolver->setAllowedTypes('title', ['null', 'string']);
         $resolver->setAllowedTypes('visible', 'bool');
         $resolver->setAllowedTypes('width', ['null', 'string']);
@@ -681,6 +691,26 @@ abstract class AbstractColumn implements ColumnInterface
     public function setSearchable($searchable)
     {
         $this->searchable = $searchable;
+
+        return $this;
+    }
+
+    /**
+     * @return bool | null
+     */
+    public function getExcludeFromGlobalSearch()
+    {
+        return $this->excludeFromGlobalSearch;
+    }
+
+    /**
+     * @param bool | null $excludeFromGlobalSearch
+     *
+     * @return $this
+     */
+    public function setExcludeFromGlobalSearch($excludeFromGlobalSearch)
+    {
+        $this->excludeFromGlobalSearch = $excludeFromGlobalSearch;
 
         return $this;
     }
