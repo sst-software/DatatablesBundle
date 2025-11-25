@@ -234,6 +234,13 @@ class Options
      */
     protected $globalSearchType;
 
+    /**
+     * Fields which are checked when using global search,
+     * if empty, all searchable fields are used
+     * Default: null
+     */
+    protected $globalSearchableFields;
+
     public function __construct()
     {
         $this->initOptions();
@@ -272,6 +279,7 @@ class Options
             'individual_filtering_position' => 'head',
             'search_in_non_visible_columns' => false,
             'global_search_type' => 'like',
+            'global_searchable_fields' => null,
         ]);
 
         $resolver->setAllowedTypes('defer_loading', ['null', 'int', 'array']);
@@ -297,6 +305,7 @@ class Options
         $resolver->setAllowedTypes('individual_filtering_position', 'string');
         $resolver->setAllowedTypes('search_in_non_visible_columns', 'bool');
         $resolver->setAllowedTypes('global_search_type', 'string');
+        $resolver->setAllowedTypes('global_searchable_fields', ['null', 'array']);
 
         $resolver->setAllowedValues('individual_filtering_position', ['head', 'foot', 'both']);
         $resolver->setAllowedValues('global_search_type', ['like', '%like', 'like%', 'notLike', 'eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in', 'notIn', 'isNull', 'isNotNull']);
@@ -784,6 +793,25 @@ class Options
     public function setGlobalSearchType($globalSearchType)
     {
         $this->globalSearchType = $globalSearchType;
+
+        return $this;
+    }
+
+    /**
+     * @return null|string[]
+     */
+    public function getGlobalSearchableFields()
+    {
+        return $this->globalSearchableFields;
+    }
+
+    /**
+     * @param null | string[] $globalSearchableFields
+     * @return $this
+     */
+    public function setGlobalSearchableFields($globalSearchableFields)
+    {
+        $this->globalSearchableFields = $globalSearchableFields;
 
         return $this;
     }

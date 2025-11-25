@@ -513,7 +513,7 @@ class DatatableQueryBuilder
             $globalSearchType = $this->options->getGlobalSearchType();
 
             foreach ($this->columns as $key => $column) {
-                if (true === $this->isSearchableColumn($column)) {
+                if (true === $this->isSearchableColumn($column, true)) {
                     /** @var AbstractFilter $filter */
                     $filter = $this->accessor->getValue($column, 'filter');
                     $searchType = $globalSearchType;
@@ -783,8 +783,11 @@ class DatatableQueryBuilder
      *
      * @return bool
      */
-    private function isSearchableColumn(ColumnInterface $column)
+    private function isSearchableColumn(ColumnInterface $column, bool $forGlobalSearch = false)
     {
+        if (true === $forGlobalSearch && false === $this->isGlobalSearchable($column)) {
+            return false;
+        }
         $searchColumn = null !== $this->accessor->getValue($column, 'dql') && true === $this->accessor->getValue($column, 'searchable');
 
         if (false === $this->options->isSearchInNonVisibleColumns()) {
@@ -792,5 +795,39 @@ class DatatableQueryBuilder
         }
 
         return $searchColumn;
+    }
+
+    /**
+     * @param ColumnInterface $column
+     * @return bool
+     */
+    private function isGlobalSearchable(ColumnInterface $column)
+    {
+        $globalSearchableFields = $this->options->getGlobalSearchableFields();
+        if (null !== $globalSearchableFields) {
+            $globalSearchableColumns = [];
+            foreach ($globalSearchableFields as $fieldName) {
+                $columnByName = $this->getColumnByName($fieldName);
+                if (null !== $columnByName) {
+                    $globalSearchableColumns[] = $columnByName;
+                }
+            }
+            if (!\in_array($column, $globalSearchableColumns, true)) {
+                return false;
+            }
+        }
+        $excludedFromGlobalSearch = $this->accessor->getValue($column, 'excludeFromGlobalSearch');
+        return true !== $excludedFromGlobalSearch;
+    }
+
+    /**
+     * @param string $name
+     * @return ColumnInterface | null
+     */
+    private function getColumnByName(string $name) {
+        if (!isset($this->columnNames[$name])) {
+            return null;
+        }
+        return $this->columns[$this->columnNames[$name]];
     }
 }
