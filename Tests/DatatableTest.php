@@ -11,7 +11,8 @@
 
 namespace Sg\DatatablesBundle\Tests;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use ReflectionClass;
 use Sg\DatatablesBundle\Datatable\AbstractDatatable;
 use Sg\DatatablesBundle\Tests\Datatables\PostDatatable;
@@ -43,13 +44,7 @@ final class DatatableTest extends \PHPUnit\Framework\TestCase
         $twig = $this->createMock(Environment::class);
 
         /** @noinspection PhpUndefinedMethodInspection */
-        $em = $this->getMockBuilder(EntityManager::class)
-            ->disableOriginalConstructor()
-            ->setMethods(
-                ['getClassMetadata']
-            )
-            ->getMock()
-        ;
+        $em = $this->createMock(EntityManagerInterface::class);
 
         // @noinspection PhpUndefinedMethodInspection
         $em->expects(static::any())
@@ -80,13 +75,7 @@ final class DatatableTest extends \PHPUnit\Framework\TestCase
         $twig = $this->createMock(Environment::class);
 
         /** @noinspection PhpUndefinedMethodInspection */
-        $em = $this->getMockBuilder(EntityManager::class)
-            ->disableOriginalConstructor()
-            ->setMethods(
-                ['getClassMetadata']
-            )
-            ->getMock()
-        ;
+        $em = $this->createMock(EntityManagerInterface::class);
 
         // @noinspection PhpUndefinedMethodInspection
         $em->expects(static::any())
@@ -96,7 +85,7 @@ final class DatatableTest extends \PHPUnit\Framework\TestCase
 
         $mock = $this->getMockBuilder(AbstractDatatable::class)
             ->disableOriginalConstructor()
-            ->setMethods(['getName'])
+            ->onlyMethods(['getName', 'buildDatatable', 'getEntity'])
             ->getMockForAbstractClass()
         ;
         $mock->expects(static::any())
@@ -113,17 +102,7 @@ final class DatatableTest extends \PHPUnit\Framework\TestCase
     public function getClassMetadataMock()
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        $mock = $this->getMockBuilder('Doctrine\ORM\Mapping\ClassMetadata')
-            ->disableOriginalConstructor()
-            ->setMethods(['getEntityShortName'])
-            ->getMock()
-        ;
-
-        // @noinspection PhpUndefinedMethodInspection
-        $mock->expects(static::any())
-            ->method('getEntityShortName')
-            ->willReturn('{entityShortName}')
-        ;
+        $mock = $this->createMock(ClassMetadata::class);
 
         return $mock;
     }
