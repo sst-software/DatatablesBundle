@@ -13,7 +13,9 @@ namespace Sg\DatatablesBundle\Datatable\Column;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\ToManyAssociationMapping;
 use Doctrine\Persistence\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\MappingException as PersistenceMappingException;
 use Exception;
 use Sg\DatatablesBundle\Datatable\Factory;
 use Symfony\Component\Routing\RouterInterface;
@@ -200,7 +202,7 @@ class ColumnBuilder
     {
         try {
             $metadata = $this->em->getMetadataFactory()->getMetadataFor($entityName);
-        } catch (MappingException $e) {
+        } catch (MappingException | PersistenceMappingException $e) {
             throw new Exception('DatatableQueryBuilder::getMetadata(): Given object '.$entityName.' is not a Doctrine Entity.');
         }
 
@@ -292,7 +294,8 @@ class ColumnBuilder
                     $currentPart = array_shift($parts);
 
                     // @noinspection PhpUndefinedMethodInspection
-                    $column->addTypeOfAssociation($metadata->getAssociationMapping($currentPart)['type']);
+                    $associationMapping = $metadata->getAssociationMapping($currentPart);
+                    $column->addTypeOfAssociation($associationMapping instanceof ToManyAssociationMapping ? 'toMany' : 'toOne');
                     $metadata = $this->getMetadataFromAssociation($currentPart, $metadata);
                 }
             } else {
@@ -321,7 +324,7 @@ class ColumnBuilder
         if (true === $column->callAddIfClosure()) {
             $this->columns[] = $column;
             $index = \count($this->columns) - 1;
-            $this->columnNames[$dql] = $index;
+            $this->columnNames[$dql ?? ''] = $index;
             $column->setIndex($index);
 
             // Use the Column-Index as data source for Columns with 'dql' === null

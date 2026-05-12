@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 class DatatableController extends AbstractController
@@ -31,16 +31,11 @@ class DatatableController extends AbstractController
 
     /**
      * Edit field.
-     *
-     * @Route("/datatables/edit/field", methods={"POST"}, name="sg_datatables_edit")
-     *
-     * @throws Exception
-     *
-     * @return Response
      */
+    #[Route('/datatables/edit/field', name: 'sg_datatables_edit', methods: ['POST'])]
     public function editAction(Request $request, EntityManagerInterface $entityManager): Response
     {
-        if ($request->isXmlHttpRequest()) {
+        if ('XMLHttpRequest' === $request->headers->get('X-Requested-With')) {
             // x-editable sends some default parameters
             $pk = $request->request->get('pk');       // entity primary key
             $field = $request->request->get('name');  // e.g. comments.createdBy.username
@@ -61,9 +56,8 @@ class DatatableController extends AbstractController
             $entity = $this->getEntityByPk($entityClassName, $pk, $entityManager);
 
             /** @var PropertyAccessor $accessor */
-            /** @noinspection PhpUndefinedMethodInspection */
             $accessor = PropertyAccess::createPropertyAccessorBuilder()
-                ->enableMagicCall()
+                ->enableMagicMethods()
                 ->getPropertyAccessor()
             ;
 

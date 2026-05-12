@@ -12,7 +12,6 @@
 namespace Sg\DatatablesBundle\Datatable\Column;
 
 use Doctrine\DBAL\Types\Type as DoctrineType;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Exception;
 use Sg\DatatablesBundle\Datatable\AddIfTrait;
 use Sg\DatatablesBundle\Datatable\Editable\EditableInterface;
@@ -403,8 +402,10 @@ abstract class AbstractColumn implements ColumnInterface
     public function isToManyAssociation()
     {
         if (true === $this->isAssociation() && null !== $this->typeOfAssociation) {
-            if (\in_array(ClassMetadataInfo::ONE_TO_MANY, $this->typeOfAssociation, true) || \in_array(ClassMetadataInfo::MANY_TO_MANY, $this->typeOfAssociation, true)) {
-                return true;
+            foreach ($this->typeOfAssociation as $associationType) {
+                if ($associationType === 'toMany') {
+                    return true;
+                }
             }
 
             return false;
@@ -1008,7 +1009,7 @@ abstract class AbstractColumn implements ColumnInterface
     /**
      * Add a typeOfAssociation.
      *
-     * @param int $typeOfAssociation
+     * @param string $typeOfAssociation
      *
      * @return $this
      */
