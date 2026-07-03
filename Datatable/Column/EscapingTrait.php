@@ -31,7 +31,7 @@ trait EscapingTrait
     protected function escapeValue($value)
     {
         if (is_array($value)) {
-            return array_map('self::escapeValue', $value);
+            return array_map($this->escapeValue(...), $value);
         }
         if ($value !== null) {
             try {
