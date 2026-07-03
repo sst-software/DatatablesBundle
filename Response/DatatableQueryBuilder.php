@@ -564,6 +564,7 @@ class DatatableQueryBuilder
      */
     private function addSelectColumn($columnTableName, $data)
     {
+        $columnTableName ??= '';
         if (isset($this->selectColumns[$columnTableName])) {
             if (! \in_array($data, $this->selectColumns[$columnTableName], true)) {
                 $this->selectColumns[$columnTableName][] = $data;
