@@ -1,3 +1,15 @@
+# Version 1.8.1
+
+* Fix deprecation warnings (self-referencing string and null as array key)
+
+# Version 1.8.0
+
+* support orm 3 instead of 2, add support for symfony 8 and remove support for older packages
+
+# Version 1.7.0
+
+* Add option to be able to exclude a column from global search (while available for "normal" search)
+
 # Version 1.6.1
 
 * Fix deprecation warning for using strstr with `null` as haystack; refactor function while we're at it
