@@ -11,8 +11,6 @@
 
 namespace Sg\DatatablesBundle\Tests\Response;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
@@ -36,9 +34,6 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
 
     /** @var ClassMetadataFactory|ObjectProphecy */
     private $classMetadataFactory;
-
-    /** @var Connection|ObjectProphecy */
-    private $connection;
 
     /** @var ObjectProphecy|QueryBuilder */
     private $queryBuilder;
@@ -71,7 +66,6 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
     {
         $this->entityManager = $this->prophesize(EntityManagerInterface::class);
         $this->classMetadataFactory = $this->prophesize(ClassMetadataFactory::class);
-        $this->connection = $this->prophesize(Connection::class);
         $this->queryBuilder = $this->prophesize(QueryBuilder::class);
         $this->classMetadata = $this->prophesize(ClassMetadata::class);
         $this->reflectionClass = $this->prophesize(\ReflectionClass::class);
@@ -99,16 +93,55 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         $this->getDataTableQueryBuilder($entityName, $shortName);
     }
 
+    /**
+     * 'count' is a DQL keyword but not a keyword of any database platform, so it was not
+     * prefixed before the alias check was moved from the platform's SQL keyword list to
+     * the DQL parser's own reserved words.
+     */
+    public function testUsingAPrefixedAliasWhenShortNameIsADqlOnlyKeyword()
+    {
+        $entityName = '\App\Entity\Count';
+        $shortName = 'Count';
+        $this->queryBuilder->from($entityName, '_count')->willReturn($this->queryBuilder)->shouldBeCalled();
+
+        $this->getDataTableQueryBuilder($entityName, $shortName);
+    }
+
+    /**
+     * The counterpart: 'user' is reserved on PostgreSQL, SQL Server, Oracle and DB2 but is
+     * not a DQL keyword, so it is no longer prefixed on those platforms.
+     */
+    public function testUsingTheShortNameWhenShortNameIsOnlyAPlatformKeyword()
+    {
+        $entityName = '\App\Entity\User';
+        $shortName = 'User';
+        $this->queryBuilder->from($entityName, 'user')->willReturn($this->queryBuilder)->shouldBeCalled();
+
+        $this->getDataTableQueryBuilder($entityName, $shortName);
+    }
+
+    /**
+     * The alias check must not depend on the DBAL connection at all: resolving the
+     * platform is what triggered a deprecation on every datatable request.
+     */
+    public function testTheAliasCheckDoesNotTouchTheConnection()
+    {
+        $entityName = '\App\Entity\Account';
+        $this->queryBuilder->from($entityName, 'account')->willReturn($this->queryBuilder);
+
+        $this->getDataTableQueryBuilder($entityName, 'Account');
+
+        $this->entityManager->getConnection()->shouldNotHaveBeenCalled();
+    }
+
     private function getDataTableQueryBuilder(string $entityName, string $shortName): DatatableQueryBuilder
     {
         $this->reflectionClass->getShortName()->willReturn($shortName);
         $this->classMetadata->getReflectionClass()->willReturn($this->reflectionClass->reveal());
         $this->classMetadata->getIdentifierFieldNames()->willReturn([]);
         $this->classMetadataFactory->getMetadataFor($entityName)->willReturn($this->classMetadata->reveal());
-        $this->connection->getDatabasePlatform()->willReturn(new MySQLPlatform());
         $this->entityManager->getMetadataFactory()->willReturn($this->classMetadataFactory->reveal());
         $this->entityManager->createQueryBuilder()->willReturn($this->queryBuilder->reveal());
-        $this->entityManager->getConnection()->willreturn($this->connection->reveal());
         $this->columnBuilder->getColumns()->willReturn([]);
         $this->columnBuilder->getColumnNames()->willReturn([]);
         $this->dataTable->getEntity()->willReturn($entityName);
