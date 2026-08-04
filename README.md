@@ -19,9 +19,20 @@
 ```yaml
 sg_datatables_bundle:
     resource: "@SgDatatablesBundle/Controller/"
-    type: annotation
+    type: attribute
     prefix: /sg
 ```
+
+The bundle's controller uses native PHP attributes (`#[Route]`), so the loader type is
+`attribute`. Earlier versions of this README said `type: annotation`; that value still works on
+Symfony 6.4 but triggers a deprecation there, and Symfony 7 dropped it. If you are upgrading
+and see
+
+```
+Make sure there is a loader supporting the "annotation" type.
+```
+
+then this is the line to change.
 
 ### Array hydration only
 
