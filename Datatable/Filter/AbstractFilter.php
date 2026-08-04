@@ -266,10 +266,10 @@ abstract class AbstractFilter implements FilterInterface
     /**
      * Add an or condition.
      *
-     * @param string $searchType
-     * @param string $searchField
-     * @param string $searchTypeOfField
-     * @param int    $parameterCounter
+     * @param string      $searchType
+     * @param string      $searchField
+     * @param string|null $searchTypeOfField
+     * @param int         $parameterCounter
      *
      * @return Composite
      */
@@ -281,15 +281,19 @@ abstract class AbstractFilter implements FilterInterface
     /**
      * Get an expression.
      *
-     * @param string $searchType
-     * @param string $searchField
-     * @param string $searchTypeOfField
-     * @param int    $parameterCounter
+     * @param string      $searchType
+     * @param string      $searchField
+     * @param string|null $searchTypeOfField
+     * @param int         $parameterCounter
      *
      * @return Composite
      */
     protected function getExpression(Composite $expr, QueryBuilder $qb, $searchType, $searchField, $searchValue, $searchTypeOfField, &$parameterCounter)
     {
+        // ColumnInterface::getTypeOfField() is null for every column that is not a select
+        // column (VirtualColumn and friends), and preg_match() does not accept null
+        $searchTypeOfField ??= '';
+
         // Prevent doctrine issue with "?0" (https://github.com/doctrine/doctrine2/issues/6699)
         ++$parameterCounter;
 

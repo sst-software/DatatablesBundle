@@ -27,9 +27,9 @@ interface FilterInterface
     /**
      * Add an and condition.
      *
-     * @param string $searchField
-     * @param string $searchTypeOfField
-     * @param int    $parameterCounter
+     * @param string      $searchField
+     * @param string|null $searchTypeOfField
+     * @param int         $parameterCounter
      *
      * @return Andx
      */
