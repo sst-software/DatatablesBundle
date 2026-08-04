@@ -11,13 +11,11 @@
 
 namespace Sg\DatatablesBundle\Tests\Response;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\Mapping\ClassMetadata;
-use Prophecy\Prophecy\ObjectProphecy;
+use PHPUnit\Framework\MockObject\MockObject;
 use Sg\DatatablesBundle\Datatable\Ajax;
 use Sg\DatatablesBundle\Datatable\Column\ColumnBuilder;
 use Sg\DatatablesBundle\Datatable\DatatableInterface;
@@ -31,93 +29,126 @@ use Sg\DatatablesBundle\Response\DatatableQueryBuilder;
  */
 final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
 {
-    /** @var EntityManagerInterface|ObjectProphecy */
+    /** @var EntityManagerInterface|MockObject */
     private $entityManager;
 
-    /** @var ClassMetadataFactory|ObjectProphecy */
-    private $classMetadataFactory;
-
-    /** @var Connection|ObjectProphecy */
-    private $connection;
-
-    /** @var ObjectProphecy|QueryBuilder */
+    /** @var MockObject|QueryBuilder */
     private $queryBuilder;
-
-    /** @var ClassMetadata|ObjectProphecy */
-    private $classMetadata;
-
-    /** @var ObjectProphecy|\ReflectionClass */
-    private $reflectionClass;
-
-    /** @var ColumnBuilder|ObjectProphecy */
-    private $columnBuilder;
-
-    /** @var ObjectProphecy|Options */
-    private $options;
-
-    /** @var Features|ObjectProphecy */
-    private $features;
-
-    /** @var Ajax|ObjectProphecy */
-    private $ajax;
-
-    /** @var DatatableInterface|ObjectProphecy */
-    private $dataTable;
 
     /**
      * {@inheritdoc}
      */
     protected function setUp(): void
     {
-        $this->entityManager = $this->prophesize(EntityManagerInterface::class);
-        $this->classMetadataFactory = $this->prophesize(ClassMetadataFactory::class);
-        $this->connection = $this->prophesize(Connection::class);
-        $this->queryBuilder = $this->prophesize(QueryBuilder::class);
-        $this->classMetadata = $this->prophesize(ClassMetadata::class);
-        $this->reflectionClass = $this->prophesize(\ReflectionClass::class);
-        $this->columnBuilder = $this->prophesize(ColumnBuilder::class);
-        $this->options = $this->prophesize(Options::class);
-        $this->features = $this->prophesize(Features::class);
-        $this->ajax = $this->prophesize(Ajax::class);
-        $this->dataTable = $this->prophesize(DatatableInterface::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $this->queryBuilder = $this->createMock(QueryBuilder::class);
     }
 
     public function testUsingAPrefixedAliasWhenShortNameIsAReservedWord()
     {
-        $entityName = '\App\Entity\Order';
-        $shortName = 'Order';
-        $this->queryBuilder->from($entityName, '_order')->willReturn($this->queryBuilder)->shouldBeCalled();
-        $this->getDataTableQueryBuilder($entityName, $shortName);
+        $this->assertRootAlias('\App\Entity\Order', 'Order', '_order');
     }
 
     public function testUsingTheSortNameWhenShortNameIsNotAReservedWord()
     {
-        $entityName = '\App\Entity\Account';
-        $shortName = 'Account';
-        $this->queryBuilder->from($entityName, 'account')->willReturn($this->queryBuilder)->shouldBeCalled();
-
-        $this->getDataTableQueryBuilder($entityName, $shortName);
+        $this->assertRootAlias('\App\Entity\Account', 'Account', 'account');
     }
 
-    private function getDataTableQueryBuilder(string $entityName, string $shortName): DatatableQueryBuilder
+    /**
+     * 'count' is a DQL keyword but not a keyword of any database platform, so it was not
+     * prefixed before the alias check was moved from the platform's SQL keyword list to
+     * the DQL parser's own reserved words.
+     */
+    public function testUsingAPrefixedAliasWhenShortNameIsADqlOnlyKeyword()
     {
-        $this->reflectionClass->getShortName()->willReturn($shortName);
-        $this->classMetadata->getReflectionClass()->willReturn($this->reflectionClass->reveal());
-        $this->classMetadata->getIdentifierFieldNames()->willReturn([]);
-        $this->classMetadataFactory->getMetadataFor($entityName)->willReturn($this->classMetadata->reveal());
-        $this->connection->getDatabasePlatform()->willReturn(new MySQLPlatform());
-        $this->entityManager->getMetadataFactory()->willReturn($this->classMetadataFactory->reveal());
-        $this->entityManager->createQueryBuilder()->willReturn($this->queryBuilder->reveal());
-        $this->entityManager->getConnection()->willreturn($this->connection->reveal());
-        $this->columnBuilder->getColumns()->willReturn([]);
-        $this->columnBuilder->getColumnNames()->willReturn([]);
-        $this->dataTable->getEntity()->willReturn($entityName);
-        $this->dataTable->getEntityManager()->willReturn($this->entityManager->reveal());
-        $this->dataTable->getColumnBuilder()->willReturn($this->columnBuilder->reveal());
-        $this->dataTable->getOptions()->willReturn($this->options->reveal());
-        $this->dataTable->getFeatures()->willReturn($this->features->reveal());
-        $this->dataTable->getAjax()->willReturn($this->ajax->reveal());
+        $this->assertRootAlias('\App\Entity\Count', 'Count', '_count');
+    }
 
-        return new DatatableQueryBuilder([], $this->dataTable->reveal());
+    /**
+     * The counterpart: 'user' is reserved on PostgreSQL, SQL Server, Oracle and DB2 but is
+     * not a DQL keyword, so it is no longer prefixed on those platforms.
+     */
+    public function testUsingTheShortNameWhenShortNameIsOnlyAPlatformKeyword()
+    {
+        $this->assertRootAlias('\App\Entity\User', 'User', 'user');
+    }
+
+    /**
+     * The alias check must not depend on the DBAL connection at all: resolving the
+     * platform is what triggered a deprecation on every datatable request.
+     */
+    public function testTheAliasCheckDoesNotTouchTheConnection()
+    {
+        // @noinspection PhpUndefinedMethodInspection
+        $this->entityManager->expects(static::never())->method('getConnection');
+
+        $this->assertRootAlias('\App\Entity\Account', 'Account', 'account');
+    }
+
+    /**
+     * The root alias is whatever getSafeName() makes of the lowercased entity short name,
+     * and it reaches the query as the second argument of QueryBuilder::from().
+     */
+    private function assertRootAlias(string $entityName, string $shortName, string $expectedAlias): void
+    {
+        // @noinspection PhpUndefinedMethodInspection
+        $this->queryBuilder->expects(static::once())
+            ->method('from')
+            ->with($entityName, $expectedAlias)
+            ->willReturn($this->queryBuilder)
+        ;
+
+        $this->createDatatableQueryBuilder($entityName, $shortName);
+    }
+
+    private function createDatatableQueryBuilder(string $entityName, string $shortName): DatatableQueryBuilder
+    {
+        /** @noinspection PhpUndefinedMethodInspection */
+        $reflectionClass = $this->createMock(\ReflectionClass::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $reflectionClass->method('getShortName')->willReturn($shortName);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        $classMetadata = $this->createMock(ClassMetadata::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $classMetadata->method('getReflectionClass')->willReturn($reflectionClass);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $classMetadata->method('getIdentifierFieldNames')->willReturn([]);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        $classMetadataFactory = $this->createMock(ClassMetadataFactory::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $classMetadataFactory->method('getMetadataFor')->with($entityName)->willReturn($classMetadata);
+
+        // @noinspection PhpUndefinedMethodInspection
+        $this->entityManager->method('getMetadataFactory')->willReturn($classMetadataFactory);
+        // @noinspection PhpUndefinedMethodInspection
+        $this->entityManager->method('createQueryBuilder')->willReturn($this->queryBuilder);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        $columnBuilder = $this->createMock(ColumnBuilder::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $columnBuilder->method('getColumns')->willReturn([]);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $columnBuilder->method('getColumnNames')->willReturn([]);
+
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable = $this->createMock(DatatableInterface::class);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable->method('getEntity')->willReturn($entityName);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable->method('getEntityManager')->willReturn($this->entityManager);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable->method('getColumnBuilder')->willReturn($columnBuilder);
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable->method('getOptions')->willReturn($this->createMock(Options::class));
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable->method('getFeatures')->willReturn($this->createMock(Features::class));
+        /** @noinspection PhpUndefinedMethodInspection */
+        $dataTable->method('getAjax')->willReturn($this->createMock(Ajax::class));
+
+        return new DatatableQueryBuilder([], $dataTable);
     }
 }

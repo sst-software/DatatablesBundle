@@ -23,7 +23,9 @@
     },
     "require": {
         "php": ">=8.1",
-        "doctrine/orm": "^3.0",
+        "doctrine/dbal": "^4.0",
+        "doctrine/orm": "^3.2",
+        "doctrine/persistence": "^3.3.1|^4.0",
         "friendsofsymfony/jsrouting-bundle": "^3.0",
         "symfony/config": "^6.4|^7.0|^8.0",
         "symfony/dependency-injection": "^6.4|^7.0|^8.0",
@@ -38,9 +40,8 @@
         "twig/twig": "^3.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.5|^9.5",
-        "friendsofphp/php-cs-fixer": "^3.6",
-        "phpspec/prophecy": "^1.19"
+        "phpunit/phpunit": "^10.5|^11.5",
+        "friendsofphp/php-cs-fixer": "^3.6"
     },
     "autoload": {
         "psr-4": { "Sg\\DatatablesBundle\\": "" }

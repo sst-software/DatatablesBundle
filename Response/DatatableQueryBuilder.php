@@ -11,10 +11,10 @@
 
 namespace Sg\DatatablesBundle\Response;
 
-use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Query;
+use Doctrine\ORM\Query\TokenType;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\Mapping\MappingException as PersistenceMappingException;
@@ -29,9 +29,6 @@ use Sg\DatatablesBundle\Datatable\Options;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
-/**
- * @todo: remove phpcs warnings
- */
 class DatatableQueryBuilder
 {
     /**
@@ -162,6 +159,12 @@ class DatatableQueryBuilder
      */
     private $ajax;
 
+    /**
+     * The reserved words of the DQL parser, lazily built by getDqlKeywords().
+     *
+     * @var array|null
+     */
+    private static $dqlKeywords;
 
     //-------------------------------------------------
     // Ctor. && Init column arrays
@@ -207,7 +210,8 @@ class DatatableQueryBuilder
     /**
      * Build query.
      *
-     * @deprecated no longer used by internal code
+     * @deprecated since 2.0.0, no longer used by internal code and a no-op since the query
+     *             is built in getBuiltQb(). Will be removed in 3.0.
      *
      * @return $this
      */
@@ -287,7 +291,6 @@ class DatatableQueryBuilder
             ? (int) $query->getSingleScalarResult()
             : \count($query->getResult());
     }
-
 
     /**
      * Init column arrays for select, search, order and joins.
@@ -665,20 +668,47 @@ class DatatableQueryBuilder
     /**
      * Get safe name.
      *
+     * The returned name is used as a DQL identification variable (the root alias and the
+     * joined aliases derived from it), so it must not collide with a reserved word of the
+     * DQL parser. Deliberately not checked against the database platform's SQL keyword
+     * list: DQL aliases never reach the generated SQL, Doctrine emits its own t0_/c1_
+     * aliases for them.
+     *
+     * Before 2.0.0 this did ask the platform, via AbstractPlatform::getReservedKeywordsList().
+     * Do not restore that: the method is deprecated in DBAL 4 (doctrine/dbal#6607) and removed
+     * in DBAL 5, and the Doctrine\DBAL\Platforms\Keywords\* classes behind it are deprecated
+     * as of DBAL 4.4 as well, so there is no non-deprecated way back to platform-specific
+     * behaviour. See CHANGELOG 2.0.0 for the entity names whose alias changed as a result.
+     *
      * @param $name
      *
      * @return string
      */
     private function getSafeName($name)
     {
-        try {
-            $reservedKeywordsList = $this->em->getConnection()->getDatabasePlatform()->getReservedKeywordsList();
-            $isReservedKeyword = $reservedKeywordsList->isKeyword($name);
-        } catch (DBALException $exception) {
-            $isReservedKeyword = false;
+        return \array_key_exists(strtolower($name), self::getDqlKeywords()) ? "_{$name}" : $name;
+    }
+
+    /**
+     * All reserved words of the DQL parser, as a lookup map keyed by the lowercased word.
+     *
+     * @return array
+     */
+    private static function getDqlKeywords()
+    {
+        if (null === self::$dqlKeywords) {
+            self::$dqlKeywords = [];
+
+            foreach (TokenType::cases() as $token) {
+                // Per TokenType's own contract, everything below 200 is a symbol or an
+                // identifier rather than a keyword.
+                if ($token->value >= 200) {
+                    self::$dqlKeywords[strtolower(substr($token->name, \strlen('T_')))] = true;
+                }
+            }
         }
 
-        return $isReservedKeyword ? "_{$name}" : $name;
+        return self::$dqlKeywords;
     }
 
     private function getIdentifier(ClassMetadata $metadata)

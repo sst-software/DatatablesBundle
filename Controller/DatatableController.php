@@ -57,7 +57,7 @@ class DatatableController extends AbstractController
 
             /** @var PropertyAccessor $accessor */
             $accessor = PropertyAccess::createPropertyAccessorBuilder()
-                ->enableMagicMethods()
+                ->enableMagicCall()
                 ->getPropertyAccessor()
             ;
 
