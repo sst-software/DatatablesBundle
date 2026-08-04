@@ -12,7 +12,16 @@
 namespace Sg\DatatablesBundle\Tests\Column;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\AssociationMapping;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\ManyToManyInverseSideMapping;
+use Doctrine\ORM\Mapping\ManyToManyOwningSideMapping;
+use Doctrine\ORM\Mapping\ManyToOneAssociationMapping;
+use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
+use Doctrine\ORM\Mapping\OneToOneInverseSideMapping;
+use Doctrine\ORM\Mapping\OneToOneOwningSideMapping;
+use Sg\DatatablesBundle\Datatable\Column\AbstractColumn;
 use Sg\DatatablesBundle\Datatable\Column\ActionColumn;
 use Sg\DatatablesBundle\Datatable\Column\Column;
 use Sg\DatatablesBundle\Datatable\Column\ColumnBuilder;
@@ -72,7 +81,46 @@ final class ColumnBuilderTest extends \PHPUnit\Framework\TestCase
         static::assertSame([], $columnBuilder->getColumns());
     }
 
-    private function getColumnBuilder(): ColumnBuilder
+    /**
+     * 1.8.0 replaced the ClassMetadataInfo::ONE_TO_MANY / MANY_TO_MANY integers with an
+     * `instanceof ToManyAssociationMapping` check. These pin that every concrete ORM 3
+     * mapping class still lands on the association type the column expects.
+     *
+     * @dataProvider provideAssociationMappings
+     */
+    public function testTheAssociationTypeIsDerivedFromTheOrmMapping(AssociationMapping $mapping, bool $expectedToMany)
+    {
+        $columnBuilder = $this->getColumnBuilder($mapping);
+        $columnBuilder->add('comments.title', Column::class, ['title' => 'Comment title']);
+
+        $columns = $columnBuilder->getColumns();
+
+        static::assertSame(
+            $expectedToMany ? [AbstractColumn::TO_MANY_ASSOCIATION] : [AbstractColumn::TO_ONE_ASSOCIATION],
+            $columns[0]->getTypeOfAssociation()
+        );
+        static::assertSame($expectedToMany, $columns[0]->isToManyAssociation());
+    }
+
+    public static function provideAssociationMappings(): array
+    {
+        $mappingArray = [
+            'fieldName' => 'comments',
+            'sourceEntity' => 'AppBundle\Entity\Post',
+            'targetEntity' => 'AppBundle\Entity\Comment',
+        ];
+
+        return [
+            'oneToMany' => [OneToManyAssociationMapping::fromMappingArray($mappingArray), true],
+            'manyToManyOwningSide' => [ManyToManyOwningSideMapping::fromMappingArray($mappingArray), true],
+            'manyToManyInverseSide' => [ManyToManyInverseSideMapping::fromMappingArray($mappingArray), true],
+            'manyToOne' => [ManyToOneAssociationMapping::fromMappingArray($mappingArray), false],
+            'oneToOneOwningSide' => [OneToOneOwningSideMapping::fromMappingArray($mappingArray), false],
+            'oneToOneInverseSide' => [OneToOneInverseSideMapping::fromMappingArray($mappingArray), false],
+        ];
+    }
+
+    private function getColumnBuilder(?AssociationMapping $associationMapping = null): ColumnBuilder
     {
         /** @noinspection PhpUndefinedMethodInspection */
         $metadata = $this->createMock(ClassMetadata::class);
@@ -85,6 +133,20 @@ final class ColumnBuilderTest extends \PHPUnit\Framework\TestCase
         $router = $this->createMock(RouterInterface::class);
         /** @noinspection PhpUndefinedMethodInspection */
         $em = $this->createMock(EntityManagerInterface::class);
+
+        if (null !== $associationMapping) {
+            /** @noinspection PhpUndefinedMethodInspection */
+            $metadata->method('getAssociationMapping')->willReturn($associationMapping);
+            /** @noinspection PhpUndefinedMethodInspection */
+            $metadata->method('getAssociationTargetClass')->willReturn('AppBundle\Entity\Comment');
+
+            /** @noinspection PhpUndefinedMethodInspection */
+            $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+            /** @noinspection PhpUndefinedMethodInspection */
+            $metadataFactory->method('getMetadataFor')->willReturn($metadata);
+            /** @noinspection PhpUndefinedMethodInspection */
+            $em->method('getMetadataFactory')->willReturn($metadataFactory);
+        }
 
         return new ColumnBuilder($metadata, $twig, $router, 'post_datatable', $em);
     }

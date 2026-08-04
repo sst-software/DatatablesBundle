@@ -51,6 +51,20 @@ abstract class AbstractColumn implements ColumnInterface
      */
     public const VIRTUAL_COLUMN = 'virtual';
 
+    //-------------------------------------------------
+    // Association Types
+    //-------------------------------------------------
+
+    /**
+     * Identifies a to-one association (ORM's ToOneAssociationMapping).
+     */
+    public const TO_ONE_ASSOCIATION = 'toOne';
+
+    /**
+     * Identifies a to-many association (ORM's ToManyAssociationMapping).
+     */
+    public const TO_MANY_ASSOCIATION = 'toMany';
+
     //--------------------------------------------------------------------------------------------------
     // DataTables - Columns Options
     // ----------------------------
@@ -403,7 +417,7 @@ abstract class AbstractColumn implements ColumnInterface
     {
         if (true === $this->isAssociation() && null !== $this->typeOfAssociation) {
             foreach ($this->typeOfAssociation as $associationType) {
-                if ($associationType === 'toMany') {
+                if (self::TO_MANY_ASSOCIATION === $associationType) {
                     return true;
                 }
             }
@@ -995,12 +1009,18 @@ abstract class AbstractColumn implements ColumnInterface
     }
 
     /**
-     * @param array|null $typeOfAssociation
+     * @param array|null $typeOfAssociation An array of self::TO_ONE_ASSOCIATION / self::TO_MANY_ASSOCIATION
+     *
+     * @throws Exception
      *
      * @return $this
      */
     public function setTypeOfAssociation($typeOfAssociation)
     {
+        foreach ((array) $typeOfAssociation as $association) {
+            $this->validateTypeOfAssociation($association);
+        }
+
         $this->typeOfAssociation = $typeOfAssociation;
 
         return $this;
@@ -1009,15 +1029,35 @@ abstract class AbstractColumn implements ColumnInterface
     /**
      * Add a typeOfAssociation.
      *
-     * @param string $typeOfAssociation
+     * @param string $typeOfAssociation One of self::TO_ONE_ASSOCIATION / self::TO_MANY_ASSOCIATION
+     *
+     * @throws Exception
      *
      * @return $this
      */
     public function addTypeOfAssociation($typeOfAssociation)
     {
+        $this->validateTypeOfAssociation($typeOfAssociation);
+
         $this->typeOfAssociation[] = $typeOfAssociation;
 
         return $this;
+    }
+
+    /**
+     * Until 1.8.0 these were the ClassMetadataInfo::ONE_TO_MANY / MANY_TO_MANY integers.
+     * Reject anything unknown instead of letting isToManyAssociation() silently answer
+     * false, which renders a to-many column as a single field.
+     *
+     * @param $typeOfAssociation
+     *
+     * @throws Exception
+     */
+    private function validateTypeOfAssociation($typeOfAssociation)
+    {
+        if (self::TO_ONE_ASSOCIATION !== $typeOfAssociation && self::TO_MANY_ASSOCIATION !== $typeOfAssociation) {
+            throw new Exception('AbstractColumn::validateTypeOfAssociation(): Expected AbstractColumn::TO_ONE_ASSOCIATION or AbstractColumn::TO_MANY_ASSOCIATION.');
+        }
     }
 
     /**

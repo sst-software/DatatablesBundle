@@ -295,7 +295,7 @@ class ColumnBuilder
 
                     // @noinspection PhpUndefinedMethodInspection
                     $associationMapping = $metadata->getAssociationMapping($currentPart);
-                    $column->addTypeOfAssociation($associationMapping instanceof ToManyAssociationMapping ? 'toMany' : 'toOne');
+                    $column->addTypeOfAssociation($associationMapping instanceof ToManyAssociationMapping ? AbstractColumn::TO_MANY_ASSOCIATION : AbstractColumn::TO_ONE_ASSOCIATION);
                     $metadata = $this->getMetadataFromAssociation($currentPart, $metadata);
                 }
             } else {
