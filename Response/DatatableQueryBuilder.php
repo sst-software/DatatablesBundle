@@ -29,9 +29,6 @@ use Sg\DatatablesBundle\Datatable\Options;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
-/**
- * @todo: remove phpcs warnings
- */
 class DatatableQueryBuilder
 {
     /**
@@ -169,7 +166,6 @@ class DatatableQueryBuilder
      */
     private static $dqlKeywords;
 
-
     //-------------------------------------------------
     // Ctor. && Init column arrays
     //-------------------------------------------------
@@ -214,7 +210,8 @@ class DatatableQueryBuilder
     /**
      * Build query.
      *
-     * @deprecated no longer used by internal code
+     * @deprecated since 2.0.0, no longer used by internal code and a no-op since the query
+     *             is built in getBuiltQb(). Will be removed in 3.0.
      *
      * @return $this
      */
@@ -294,7 +291,6 @@ class DatatableQueryBuilder
             ? (int) $query->getSingleScalarResult()
             : \count($query->getResult());
     }
-
 
     /**
      * Init column arrays for select, search, order and joins.

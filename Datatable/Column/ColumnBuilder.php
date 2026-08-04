@@ -33,7 +33,7 @@ class ColumnBuilder
     /**
      * The Twig Environment.
      *
-     * @var Twig_Environment
+     * @var Environment
      */
     private $twig;
 

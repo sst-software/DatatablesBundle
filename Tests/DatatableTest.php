@@ -59,6 +59,10 @@ final class DatatableTest extends \PHPUnit\Framework\TestCase
         static::assertSame('post_datatable', $table->getName());
 
         $table->buildDatatable();
+
+        $columns = $table->getColumnBuilder()->getColumns();
+        static::assertCount(9, $columns);
+        static::assertSame('AppBundle\Entity\Post', $columns[0]->getEntityClassName());
     }
 
     public function testInvalidName()
@@ -99,10 +103,21 @@ final class DatatableTest extends \PHPUnit\Framework\TestCase
         $constructor->invoke($mock, $authorizationChecker, $securityToken, $translator, $router, $em, $twig);
     }
 
+    /**
+     * The 1.7.0 version of this mock stubbed getEntityShortName(), which ORM 3 removed
+     * along with ClassMetadataInfo and which the bundle no longer calls. getName() is what
+     * ColumnBuilder actually reads, so stub that instead of asserting nothing at all.
+     */
     public function getClassMetadataMock()
     {
         /** @noinspection PhpUndefinedMethodInspection */
         $mock = $this->createMock(ClassMetadata::class);
+
+        // @noinspection PhpUndefinedMethodInspection
+        $mock->expects(static::any())
+            ->method('getName')
+            ->willReturn('AppBundle\Entity\Post')
+        ;
 
         return $mock;
     }

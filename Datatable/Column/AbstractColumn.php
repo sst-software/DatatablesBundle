@@ -257,7 +257,7 @@ abstract class AbstractColumn implements ColumnInterface
      * The Twig Environment to render Twig templates in Column rowes.
      * Is set in the ColumnBuilder.
      *
-     * @var Twig_Environment
+     * @var Environment
      */
     protected $twig;
 
@@ -905,7 +905,7 @@ abstract class AbstractColumn implements ColumnInterface
     }
 
     /**
-     * @return Twig_Environment
+     * @return Environment
      */
     public function getTwig()
     {
