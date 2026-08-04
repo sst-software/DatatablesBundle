@@ -324,7 +324,7 @@ class ColumnBuilder
         if (true === $column->callAddIfClosure()) {
             $this->columns[] = $column;
             $index = \count($this->columns) - 1;
-            $this->columnNames[$dql ?? ''] = $index;
+            $this->columnNames[$this->getColumnNamesKey($dql)] = $index;
             $column->setIndex($index);
 
             // Use the Column-Index as data source for Columns with 'dql' === null
@@ -360,13 +360,13 @@ class ColumnBuilder
         }
 
         // Remove column from columnNames
-        if (\array_key_exists($dql, $this->columnNames)) {
-            unset($this->columnNames[$dql]);
+        if (\array_key_exists($this->getColumnNamesKey($dql), $this->columnNames)) {
+            unset($this->columnNames[$this->getColumnNamesKey($dql)]);
         }
 
         // Reindex columnNames
         foreach ($this->columns as $k => $c) {
-            $this->columnNames[$c->getDql()] = $k;
+            $this->columnNames[$this->getColumnNamesKey($c->getDql())] = $k;
         }
 
         // Remove column from uniqueColumns
@@ -380,6 +380,22 @@ class ColumnBuilder
         }
 
         return $this;
+    }
+
+    /**
+     * Normalize a dql value for use as a $columnNames key.
+     *
+     * Columns with 'dql' === null (ActionColumn, MultiselectColumn, and any VirtualColumn
+     * added without a dql) would otherwise be used as a null array key, which PHP 8.5
+     * deprecates for both array offsets and \array_key_exists().
+     *
+     * @param string|null $dql
+     *
+     * @return string
+     */
+    private function getColumnNamesKey($dql)
+    {
+        return $dql ?? '';
     }
 
     /**
