@@ -494,7 +494,7 @@ class DatatableQueryBuilder
 
                 if ('true' === $requestColumn['orderable']) {
                     $columnNames = (array) $this->orderColumns[$columnIdx];
-                    $orderDirection = $this->requestParams['order'][$i]['dir'];
+                    $orderDirection = $this->getOrderDirection($this->requestParams['order'][$i]['dir']);
 
                     foreach ($columnNames as $columnName) {
                         $qb->addOrderBy($columnName, $orderDirection);
@@ -769,5 +769,20 @@ class DatatableQueryBuilder
             return null;
         }
         return $this->columns[$this->columnNames[$name]];
+    }
+
+    /**
+     * Map a sort direction coming from the request onto a direction the ORM accepts.
+     *
+     * DataTables only ever sends 'asc' or 'desc'. Anything else falls back to ascending,
+     * which is also the DataTables default, rather than reaching the ORDER BY clause.
+     */
+    private function getOrderDirection(string $direction): string
+    {
+        if ('desc' === strtolower($direction)) {
+            return 'DESC';
+        }
+
+        return 'ASC';
     }
 }

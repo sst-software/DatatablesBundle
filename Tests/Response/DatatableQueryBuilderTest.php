@@ -17,6 +17,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use PHPUnit\Framework\MockObject\MockObject;
 use Sg\DatatablesBundle\Datatable\Ajax;
+use Sg\DatatablesBundle\Datatable\Column\Column;
 use Sg\DatatablesBundle\Datatable\Column\ColumnBuilder;
 use Sg\DatatablesBundle\Datatable\DatatableInterface;
 use Sg\DatatablesBundle\Datatable\Features;
@@ -87,6 +88,85 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         $this->assertRootAlias('\App\Entity\Account', 'Account', 'account');
     }
 
+    public function testOrderingWithAnAscendingDirection()
+    {
+        $this->assertOrderDirection('asc', 'ASC');
+    }
+
+    public function testOrderingWithADescendingDirection()
+    {
+        $this->assertOrderDirection('desc', 'DESC');
+    }
+
+    /**
+     * DataTables itself only ever sends lowercase directions, but the value is read straight
+     * from the request, so a hand-written or proxied request can capitalise it.
+     */
+    public function testOrderingWithAnUppercaseDirection()
+    {
+        $this->assertOrderDirection('DESC', 'DESC');
+    }
+
+    public function testOrderingWithAMixedCaseDirection()
+    {
+        $this->assertOrderDirection('Asc', 'ASC');
+    }
+
+    /**
+     * Until 2.0.1 the direction reached QueryBuilder::addOrderBy() unchecked, which on
+     * doctrine/orm < 3.7 concatenates it into the DQL ORDER BY clause. An unrecognised
+     * value must never reach the query; it falls back to ascending instead.
+     */
+    public function testOrderingWithAnUnknownDirectionFallsBackToAscending()
+    {
+        $this->assertOrderDirection('title DESC, account.id', 'ASC');
+    }
+
+    /**
+     * Order a single orderable column and assert which direction reaches the query.
+     */
+    private function assertOrderDirection(string $requestDirection, string $expectedDirection): void
+    {
+        $column = new Column();
+        // resolve the options, so the column gets the default orderable/searchable values
+        $column->initOptions(true);
+        $column->setDql('title');
+
+        $requestParams = [
+            'columns' => [['orderable' => 'true', 'search' => ['value' => '']]],
+            'order' => [['column' => 0, 'dir' => $requestDirection]],
+            'start' => 0,
+            // paging off: this test is about the ORDER BY clause only
+            'length' => DatatableQueryBuilder::DISABLE_PAGINATION,
+        ];
+
+        // getBuiltQb() works on a clone of the query builder, and a cloned mock records its
+        // own invocations, so the ordering is captured from the stub instead of expects().
+        $ordering = [];
+        $queryBuilder = $this->queryBuilder;
+
+        // @noinspection PhpUndefinedMethodInspection
+        $this->queryBuilder->method('from')->willReturn($queryBuilder);
+        // @noinspection PhpUndefinedMethodInspection
+        $this->queryBuilder->method('addOrderBy')->willReturnCallback(
+            static function ($sort, $order = null) use (&$ordering, $queryBuilder) {
+                $ordering[] = [$sort, $order];
+
+                return $queryBuilder;
+            }
+        );
+
+        $this->createDatatableQueryBuilder(
+            '\\App\\Entity\\Account',
+            'Account',
+            $requestParams,
+            [$column],
+            ['title' => 0]
+        )->getBuiltQb();
+
+        static::assertSame([['account.title', $expectedDirection]], $ordering);
+    }
+
     /**
      * The root alias is whatever getSafeName() makes of the lowercased entity short name,
      * and it reaches the query as the second argument of QueryBuilder::from().
@@ -103,8 +183,13 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         $this->createDatatableQueryBuilder($entityName, $shortName);
     }
 
-    private function createDatatableQueryBuilder(string $entityName, string $shortName): DatatableQueryBuilder
-    {
+    private function createDatatableQueryBuilder(
+        string $entityName,
+        string $shortName,
+        array $requestParams = [],
+        array $columns = [],
+        array $columnNames = []
+    ): DatatableQueryBuilder {
         /** @noinspection PhpUndefinedMethodInspection */
         $reflectionClass = $this->createMock(\ReflectionClass::class);
         /** @noinspection PhpUndefinedMethodInspection */
@@ -130,9 +215,9 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         /** @noinspection PhpUndefinedMethodInspection */
         $columnBuilder = $this->createMock(ColumnBuilder::class);
         /** @noinspection PhpUndefinedMethodInspection */
-        $columnBuilder->method('getColumns')->willReturn([]);
+        $columnBuilder->method('getColumns')->willReturn($columns);
         /** @noinspection PhpUndefinedMethodInspection */
-        $columnBuilder->method('getColumnNames')->willReturn([]);
+        $columnBuilder->method('getColumnNames')->willReturn($columnNames);
 
         /** @noinspection PhpUndefinedMethodInspection */
         $dataTable = $this->createMock(DatatableInterface::class);
@@ -149,6 +234,6 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
         /** @noinspection PhpUndefinedMethodInspection */
         $dataTable->method('getAjax')->willReturn($this->createMock(Ajax::class));
 
-        return new DatatableQueryBuilder([], $dataTable);
+        return new DatatableQueryBuilder($requestParams, $dataTable);
     }
 }

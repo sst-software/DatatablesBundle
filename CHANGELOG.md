@@ -1,3 +1,22 @@
+# Version 2.0.1
+
+## Fixes
+
+* **The sort direction from the request is validated before it reaches the query.**
+  `DatatableQueryBuilder::setOrderBy()` handed `order[i][dir]` to `QueryBuilder::addOrderBy()`
+  unchecked. On `doctrine/orm` < 3.7 nothing validates it there either - `Expr\OrderBy::add()` is
+  just `$this->parts[] = $sort . ' ' . $order;` - so the request value landed verbatim in the DQL
+  ORDER BY clause: valid DQL could append ordering over fields the datatable never renders, and
+  anything else raised a `QueryException`. The value is now lowercased and mapped onto `'ASC'` or
+  `'DESC'`, with an unrecognised value falling back to ascending rather than throwing, since that is
+  DataTables' own default. Only `doctrine/orm` >= 3.7 was unaffected, and the bundle requires `^3.2`.
+
+## Not in this release
+
+* **This is not the ORM 3.7 `SortDirection` fix.** That deprecation is untouched here - the enum
+  does not exist before 3.7, so it cannot be used while `doctrine/orm` stays `^3.2`. It is coming in
+  2.1.0. No constraint changed in 2.0.1, so this patch installs everywhere 2.0.0 did.
+
 # Version 2.0.0
 
 ## Breaking changes
