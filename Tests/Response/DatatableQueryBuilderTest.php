@@ -11,6 +11,7 @@
 
 namespace Sg\DatatablesBundle\Tests\Response;
 
+use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\QueryBuilder;
@@ -90,12 +91,12 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
 
     public function testOrderingWithAnAscendingDirection()
     {
-        $this->assertOrderDirection('asc', 'ASC');
+        $this->assertOrderDirection('asc', \SortDirection::Ascending);
     }
 
     public function testOrderingWithADescendingDirection()
     {
-        $this->assertOrderDirection('desc', 'DESC');
+        $this->assertOrderDirection('desc', \SortDirection::Descending);
     }
 
     /**
@@ -104,42 +105,63 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
      */
     public function testOrderingWithAnUppercaseDirection()
     {
-        $this->assertOrderDirection('DESC', 'DESC');
+        $this->assertOrderDirection('DESC', \SortDirection::Descending);
     }
 
     public function testOrderingWithAMixedCaseDirection()
     {
-        $this->assertOrderDirection('Asc', 'ASC');
+        $this->assertOrderDirection('Asc', \SortDirection::Ascending);
     }
 
     /**
      * Until 2.0.1 the direction reached QueryBuilder::addOrderBy() unchecked, which on
      * doctrine/orm < 3.7 concatenates it into the DQL ORDER BY clause. An unrecognised
      * value must never reach the query; it falls back to ascending instead.
+     *
+     * Since 2.1.0 an unrecognised value would instead make addOrderBy() throw an
+     * InvalidArgumentException, so the fallback still has to happen here.
      */
     public function testOrderingWithAnUnknownDirectionFallsBackToAscending()
     {
-        $this->assertOrderDirection('title DESC, account.id', 'ASC');
+        $this->assertOrderDirection('title DESC, account.id', \SortDirection::Ascending);
+    }
+
+    /**
+     * The tests above record the argument against a mocked QueryBuilder, which never runs
+     * ORM's own handling of it. The deprecation this release removes is therefore checked
+     * against a real Doctrine\ORM\QueryBuilder, with doctrine/deprecations tracking on:
+     * QueryBuilder::getSortDirection() triggers it for every $order that is not a
+     * SortDirection, so a single triggered deprecation fails this test.
+     *
+     * @see https://github.com/doctrine/orm/issues/11313
+     */
+    public function testOrderingDoesNotTriggerTheOrmSortDirectionDeprecation()
+    {
+        $this->queryBuilder = new QueryBuilder($this->entityManager);
+
+        Deprecation::enableTrackingDeprecations();
+        // the deprecation is deduplicated per call site, so a run of the suite that already
+        // triggered it elsewhere would otherwise hide it here
+        Deprecation::withoutDeduplication();
+
+        try {
+            $qb = $this->createOrderedDatatableQueryBuilder('desc')->getBuiltQb();
+
+            static::assertSame([], Deprecation::getTriggeredDeprecations());
+            static::assertSame(
+                ['account.title DESC'],
+                array_map('strval', $qb->getDQLPart('orderBy'))
+            );
+        } finally {
+            Deprecation::disable();
+        }
     }
 
     /**
      * Order a single orderable column and assert which direction reaches the query.
      */
-    private function assertOrderDirection(string $requestDirection, string $expectedDirection): void
+    private function assertOrderDirection(string $requestDirection, \SortDirection $expectedDirection): void
     {
-        $column = new Column();
-        // resolve the options, so the column gets the default orderable/searchable values
-        $column->initOptions(true);
-        $column->setDql('title');
-
-        $requestParams = [
-            'columns' => [['orderable' => 'true', 'search' => ['value' => '']]],
-            'order' => [['column' => 0, 'dir' => $requestDirection]],
-            'start' => 0,
-            // paging off: this test is about the ORDER BY clause only
-            'length' => DatatableQueryBuilder::DISABLE_PAGINATION,
-        ];
-
         // getBuiltQb() works on a clone of the query builder, and a cloned mock records its
         // own invocations, so the ordering is captured from the stub instead of expects().
         $ordering = [];
@@ -156,15 +178,37 @@ final class DatatableQueryBuilderTest extends \PHPUnit\Framework\TestCase
             }
         );
 
-        $this->createDatatableQueryBuilder(
+        $this->createOrderedDatatableQueryBuilder($requestDirection)->getBuiltQb();
+
+        static::assertSame([['account.title', $expectedDirection]], $ordering);
+    }
+
+    /**
+     * Build a datatable over a single orderable column, ordered by the given raw request
+     * direction.
+     */
+    private function createOrderedDatatableQueryBuilder(string $requestDirection): DatatableQueryBuilder
+    {
+        $column = new Column();
+        // resolve the options, so the column gets the default orderable/searchable values
+        $column->initOptions(true);
+        $column->setDql('title');
+
+        $requestParams = [
+            'columns' => [['orderable' => 'true', 'search' => ['value' => '']]],
+            'order' => [['column' => 0, 'dir' => $requestDirection]],
+            'start' => 0,
+            // paging off: this test is about the ORDER BY clause only
+            'length' => DatatableQueryBuilder::DISABLE_PAGINATION,
+        ];
+
+        return $this->createDatatableQueryBuilder(
             '\\App\\Entity\\Account',
             'Account',
             $requestParams,
             [$column],
             ['title' => 0]
-        )->getBuiltQb();
-
-        static::assertSame([['account.title', $expectedDirection]], $ordering);
+        );
     }
 
     /**

@@ -1,3 +1,28 @@
+# Version 2.1.0
+
+## Breaking changes
+
+* **`doctrine/orm` now requires `^3.7`** (was `^3.2`). Below 3.7 the `SortDirection` enum does not
+  exist and `addOrderBy()` types its second parameter as a plain `string`, so the fix below cannot be
+  made conditionally. Composer will not offer 2.1.0 to an app under ORM 3.7; it keeps 2.0.1, which
+  has the same input validation and no deprecation left to fix on that version. Same treatment as the
+  `^3.0` -> `^3.2` bump in 2.0.0.
+
+* **`symfony/polyfill-php86` is a new requirement (`^1.37`).** `SortDirection` is a root-namespace
+  enum added in PHP 8.6; below that it comes from the polyfill. The bundle now names it in its own
+  source, so it declares it directly instead of relying on ORM pulling it in - as with
+  `doctrine/dbal` and `doctrine/persistence` in 2.0.0. `php` stays at `>=8.1`.
+
+## Fixes
+
+* **The `doctrine/orm` 3.7 `SortDirection` deprecation is gone.** ORM 3.7 deprecated passing a string
+  as the `$order` argument of `orderBy()`/`addOrderBy()`
+  ([doctrine/orm#11313](https://github.com/doctrine/orm/issues/11313)), so it fired on every datatable
+  request carrying an `order` parameter. The direction helper added in 2.0.1 now returns
+  `\SortDirection::Ascending`/`\SortDirection::Descending` instead of `'ASC'`/`'DESC'`; it is still
+  case-insensitive and still falls back to ascending, which now also keeps an unrecognised value from
+  making `addOrderBy()` throw.
+
 # Version 2.0.1
 
 ## Fixes

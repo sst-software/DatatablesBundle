@@ -776,13 +776,17 @@ class DatatableQueryBuilder
      *
      * DataTables only ever sends 'asc' or 'desc'. Anything else falls back to ascending,
      * which is also the DataTables default, rather than reaching the ORDER BY clause.
+     *
+     * The return type is the root-namespace SortDirection enum, added in PHP 8.6 and
+     * provided by symfony/polyfill-php86 below it. Passing a string to addOrderBy() is
+     * deprecated since doctrine/orm 3.7.
      */
-    private function getOrderDirection(string $direction): string
+    private function getOrderDirection(string $direction): \SortDirection
     {
         if ('desc' === strtolower($direction)) {
-            return 'DESC';
+            return \SortDirection::Descending;
         }
 
-        return 'ASC';
+        return \SortDirection::Ascending;
     }
 }

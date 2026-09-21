@@ -24,7 +24,7 @@
     "require": {
         "php": ">=8.1",
         "doctrine/dbal": "^4.0",
-        "doctrine/orm": "^3.2",
+        "doctrine/orm": "^3.7",
         "doctrine/persistence": "^3.3.1|^4.0",
         "friendsofsymfony/jsrouting-bundle": "^3.0",
         "symfony/config": "^6.4|^7.0|^8.0",
@@ -33,6 +33,7 @@
         "symfony/http-kernel": "^6.4|^7.0|^8.0",
         "symfony/framework-bundle": "^6.4|^7.0|^8.0",
         "symfony/options-resolver": "^6.4|^7.0|^8.0",
+        "symfony/polyfill-php86": "^1.37",
         "symfony/property-access": "^6.4|^7.0|^8.0",
         "symfony/routing": "^6.4|^7.0|^8.0",
         "symfony/security-core": "^6.4|^7.0|^8.0",
@@ -40,6 +41,7 @@
         "twig/twig": "^3.0"
     },
     "require-dev": {
+        "doctrine/deprecations": "^1.1",
         "phpunit/phpunit": "^10.5|^11.5",
         "friendsofphp/php-cs-fixer": "^3.6"
     },

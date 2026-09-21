@@ -7,8 +7,10 @@
 ### Requirements
 
 - PHP 8.1 or higher
-- Doctrine ORM 3.2 or higher. ORM 3.0 and 3.1 are not supported: the generated query uses
-  the DQL `PARTIAL` keyword, which was removed in ORM 3.0 and only reintroduced in ORM 3.2.
+- Doctrine ORM 3.7 or higher. The bundle passes the `SortDirection` enum to `addOrderBy()`, which
+  ORM only accepts from 3.7 onward. On ORM 3.2 through 3.6 use 2.0.1; below 3.2 the bundle does not
+  work at all, because the generated query uses the DQL `PARTIAL` keyword, which was removed in ORM
+  3.0 and only reintroduced in ORM 3.2.
 - Symfony 6.4, 7 or 8
 
 ### Installation
